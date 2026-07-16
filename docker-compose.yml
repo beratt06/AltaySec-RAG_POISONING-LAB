@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  rag-lab:
+    build: ./app
+    container_name: rag_poisoning_lab
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - FLASK_RUN_PORT=5001
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLAG_EASY=AltaySec{3asy_RAG_P0is0n1ng_Upload}
+      - FLAG_MEDIUM=AltaySec{M3dium_RAG_URL_1nj3cti0n}
+      - FLAG_HARD=AltaySec{H4rd_RAG_ChVnk_ByP4ss}
+    restart: unless-stopped

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AltaySec — RAG Poisoning Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!--  SCREEN 1 — Setup / API Key                                   -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="screen-setup" class="screen active" aria-label="Kurulum Ekranı">
+    <div class="setup-container">
+
+      <div class="logo-area">
+        <h1 class="logo-text">AltaySec</h1>
+        <div class="logo-tagline">
+          <span class="type-cursor">RAG POISONING LAB</span>
+        </div>
+      </div>
+
+      <div class="setup-card glass">
+        <div class="setup-card-header">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+        </div>
+
+        <form id="setup-form" novalidate>
+          <div class="form-group">
+            <label class="form-label">Provider Seç</label>
+            <div class="provider-selector" role="group" aria-label="LLM Provider">
+              <button type="button" class="provider-btn active" data-provider="gemini" id="provider-gemini">
+                <span class="provider-icon">🔮</span>
+                <div class="provider-info">
+                  <span class="provider-name">Google Gemini</span>
+                  <span class="provider-model">gemini-2.0-flash</span>
+                </div>
+                <span class="provider-tag">Ücretsiz</span>
+              </button>
+              <button type="button" class="provider-btn" data-provider="groq" id="provider-groq">
+                <span class="provider-icon">⚡</span>
+                <div class="provider-info">
+                  <span class="provider-name">Groq</span>
+                  <span class="provider-model">llama-3.3-70b-versatile</span>
+                </div>
+                <span class="provider-tag">Ücretsiz</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="api-key">API Key</label>
+            <div class="input-wrapper">
+              <span class="input-prefix">$</span>
+              <input
+                type="password"
+                id="api-key"
+                class="text-input"
+                placeholder="API key'ini buraya yapıştır..."
+                autocomplete="off"
+                spellcheck="false"
+                required
+              />
+              <button type="button" id="toggle-key-btn" class="input-suffix-btn" aria-label="API key'i göster/gizle">
+                <span id="eye-icon">👁</span>
+              </button>
+            </div>
+            <div id="key-helper" class="form-helper">
+              Gemini için: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com</a>
+              &nbsp;|&nbsp;
+              Groq için: <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com</a>
+            </div>
+          </div>
+
+          <div id="setup-error" class="form-error hidden" role="alert"></div>
+
+          <button type="submit" class="btn-primary full-width" id="connect-btn">
+            <span class="btn-text">BAĞLAN VE BAŞLA</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </form>
+
+        <div class="setup-features">
+          <div class="feature-item">
+            <span class="feature-icon">🧠</span>
+            <span>Gerçek Vektör Veritabanı ve LLM Entegrasyonu</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🛡️</span>
+            <span>RAG Poisoning: WAF Atlatma, Chunk Bypass ve Semantic Evasion</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🎯</span>
+            <span>3 Farklı RAG Poisoning Senaryosu (Upload, WAF Bypass, Chunking)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!--  SCREEN 2 — Challenge Selection                               -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="screen-challenges" class="screen" aria-label="Challenge Seçimi">
+
+    <header class="app-header glass">
+      <div class="header-logo">
+        <span class="header-logo-main">AltaySec</span>
+        <span class="header-logo-slash">/</span>
+        <span class="header-logo-sub">rag-poisoning-lab</span>
+      </div>
+      <div class="header-center">
+        <span id="provider-badge" class="provider-badge"></span>
+      </div>
+      <div class="header-actions">
+        <button id="logout-btn" class="btn-ghost" aria-label="Oturumu kapat">
+          ← Çıkış
+        </button>
+      </div>
+    </header>
+
+    <main class="challenges-main">
+      <div class="challenges-hero">
+        <h2 class="challenges-title">
+          Senaryonu <span class="gradient-text">Seç</span>
+        </h2>
+      </div>
+
+      <div id="challenge-grid" class="challenge-grid" role="list">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="how-to-play">
+        <div class="htp-card glass">
+          <div class="htp-icon">🎯</div>
+          <div>
+            <strong>Nasıl Oynanır?</strong>
+            <p>Knowledge Base'e zehirli veri enjekte et. Sonra LLM ile konuşup o veriyi RAG ile çağırmasını sağla ve gizli bayrağı sızdır.</p>
+          </div>
+        </div>
+        <div class="htp-card glass">
+          <div class="htp-icon">🚩</div>
+          <div>
+            <strong>Bayrak Formatı</strong>
+            <p>Tüm bayraklar <code>AltaySec{...}</code> formatındadır.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!--  SCREEN 3 — Lab (Chat & Inject Interface)                     -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="screen-lab" class="screen" aria-label="RAG Laboratuvarı">
+
+    <header class="lab-header glass">
+      <button id="back-btn" class="btn-ghost" aria-label="Challenge seçimine dön">
+        ← Geri
+      </button>
+      <div class="lab-header-center">
+        <div class="lab-status-dot" aria-hidden="true"></div>
+        <span id="lab-level-badge" class="lab-level-badge"></span>
+        <span id="lab-subtitle-text" class="lab-subtitle-text"></span>
+      </div>
+      <button id="clear-chat-btn" class="btn-ghost" aria-label="Sohbeti sıfırla">
+        🗑 Sıfırla
+      </button>
+    </header>
+
+    <div class="lab-layout">
+
+      <!-- ── Sidebar ─────────────────────────────────────────── -->
+      <aside class="lab-sidebar glass">
+
+        <div class="sidebar-block">
+          <div class="sidebar-block-header">
+            <span class="sidebar-icon">🎯</span>
+            <h3>Senaryo</h3>
+          </div>
+          <p id="lab-objective" class="sidebar-text"></p>
+        </div>
+
+        <!-- RAG Injection Vector -->
+        <div class="sidebar-block flag-block">
+          <div class="sidebar-block-header">
+            <span class="sidebar-icon" id="injection-icon">💉</span>
+            <h3 id="injection-title">Injection Vector <span class="sidebar-badge" id="injection-badge" style="font-size: 0.7em; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; margin-left: 5px;">Knowledge Base</span></h3>
+          </div>
+          <p class="sidebar-text" id="injection-desc">Veritabanına eklenecek veriyi girin.</p>
+          
+          <div id="injection-upload-area" style="display: none; margin-top:10px;">
+             <textarea id="inject-textarea" class="text-input" style="width:100%; min-height:80px; resize:vertical; background: rgba(13, 17, 23, 0.6); color: var(--text); padding:10px;" placeholder="Zehirli metni buraya yaz..."></textarea>
+          </div>
+          
+          <button id="inject-btn" class="btn-primary full-width" style="margin-top: 10px;"><span id="inject-btn-text">ENJEKTE ET</span></button>
+          <div id="inject-status" class="form-helper" style="margin-top: 5px; display: none;"></div>
+        </div>
+
+        <div class="sidebar-block flag-block">
+          <div class="sidebar-block-header">
+            <span class="sidebar-icon">🚩</span>
+            <h3>Bayrağı Doğrulat</h3>
+          </div>
+          <div class="flag-input-row">
+            <input
+              type="text"
+              id="flag-input"
+              class="flag-input"
+              placeholder="AltaySec{...}"
+              spellcheck="false"
+              autocomplete="off"
+            />
+            <button id="flag-submit-btn" class="btn-flag-submit">✓</button>
+          </div>
+          <div id="flag-result" class="flag-result"></div>
+        </div>
+
+      </aside>
+
+      <!-- ── Chat Panel ──────────────────────────────────────── -->
+      <main class="lab-chat-panel">
+
+        <div class="chat-topbar">
+          <div class="chat-status">
+            <span class="chat-status-dot"></span>
+            <span>LLM Endpoint Aktif</span>
+          </div>
+          <div class="chat-info">
+            <span id="chat-msg-count" class="chat-msg-count">0 mesaj</span>
+          </div>
+        </div>
+
+        <div id="chat-messages" class="chat-messages">
+          <!-- Messages rendered by JS -->
+        </div>
+
+        <div class="chat-input-area">
+          <div class="chat-input-wrapper">
+            <span class="chat-prompt-symbol">$</span>
+            <textarea
+              id="chat-input"
+              class="chat-textarea"
+              placeholder="LLM ile konuş (RAG sorgusu yap)..."
+              rows="3"
+            ></textarea>
+          </div>
+          <button id="chat-send-btn" class="btn-send">
+            <span class="send-icon">↑</span>
+            <span class="send-label">GÖNDER</span>
+          </button>
+        </div>
+
+      </main>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!--  MODAL & TOAST                                                -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div id="flag-toast" class="flag-toast">
+    <span class="toast-icon">🚩</span>
+    <span>Bayrak tespit edildi! Doğrulamak için gönder.</span>
+  </div>
+
+  <div id="success-modal" class="modal-overlay">
+    <div class="modal-content glass">
+      <div class="modal-trophy">🏆</div>
+      <h2 id="modal-title" class="modal-title">SEVİYE TAMAMLANDI!</h2>
+      <p class="modal-level-name"><span id="success-level-name"></span> seviyesini geçtin!</p>
+      <p class="modal-subtext">RAG Poisoning başarılı oldu.</p>
+      <div class="modal-flag-display" id="modal-flag-display"></div>
+      <div class="modal-actions">
+        <button id="modal-back-btn" class="btn-secondary">← Seçime Dön</button>
+        <button id="modal-continue-btn" class="btn-primary">Devam Et</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
